@@ -49,3 +49,21 @@ Integers
 z_0 z_1 
 End
 ```
+
+## F example
+
+attention: Change Model and Var when Using F.
+
+```python
+from mip_tool.func import F
+
+m = Model()
+x = m.add_var("x")
+y = m.add_var("y", obj=-1)
+m += y <= F([[0, 2], [1, 3], [2, 2]], x)
+m.optimize()
+print(x.x, y.x)  # 1.0 3.0
+```
+
+- `y <= F(curve, x)` and `y >= F(curve, x)` call `add_lines_conv`.
+- `y == F(curve, x)` calls `add_lines`.
