@@ -16,8 +16,9 @@ version = "0.0.1"
 
 [tool.poetry.dependencies]
 mip = "^1.13.0"
-numpy = "^1.19.3"
 python = "^3.8"
+numpy = "^1.19.5"
+more-itertools = "^8.6.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

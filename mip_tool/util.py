@@ -1,13 +1,33 @@
+import operator
 import os
 import sys
+from itertools import starmap
 from tempfile import TemporaryDirectory
-from typing import Sequence
+from typing import Iterable, Sequence
 
 import numpy as np
 from mip import BINARY, LinExpr, Model, Var, xsum
 from more_itertools import pairwise
 
 Point = Sequence[float]
+
+
+def monotone_increasing(it: Iterable):
+    """Check monotonous increasing
+
+    :param it: iterable of number
+    :return: True if monotonous increasing
+    """
+    return all(starmap(operator.le, pairwise(it)))
+
+
+def monotone_decreasing(it: Iterable):
+    """Check monotonous decreasing
+
+    :param it: iterable of number
+    :return: True if monotonous decreasing
+    """
+    return all(starmap(operator.ge, pairwise(it)))
 
 
 def add_line(m: Model, p1: Point, p2: Point, x: Var, y: Var, under: bool) -> None:
@@ -35,6 +55,11 @@ def add_lines_conv(m: Model, curve: np.ndarray, x: Var, y: Var, upward: bool = F
     :param y: Var y
     :param upward: Convex upward if True, defaults to False
     """
+    tilt = np.divide(*np.diff(curve, axis=0).T)
+    if upward:
+        assert monotone_decreasing(tilt), "Tilt must be decr"
+    else:
+        assert monotone_increasing(tilt), "Tilt must be incr"
     for p1, p2 in pairwise(curve):
         add_line(m, p1, p2, x, y, upward)
 

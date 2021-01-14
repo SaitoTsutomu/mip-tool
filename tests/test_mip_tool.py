@@ -1,6 +1,22 @@
 import numpy as np
 from mip import INF, Model, OptimizationStatus
-from mip_tool import add_line, add_lines, add_lines_conv
+from mip_tool import (
+    add_line,
+    add_lines,
+    add_lines_conv,
+    monotone_decreasing,
+    monotone_increasing,
+)
+
+
+def test_monotone_increasing():
+    assert monotone_increasing([-1, 3, 3, 4])
+    assert not monotone_increasing([3, 3, 2, -1, -1])
+
+
+def test_monotone_decreasing():
+    assert not monotone_decreasing([-1, 3, 3, 4])
+    assert monotone_decreasing([3, 3, 2, -1, -1])
 
 
 def check_add_line(xargs, yargs, p1, p2, under, expect):
@@ -9,6 +25,7 @@ def check_add_line(xargs, yargs, p1, p2, under, expect):
     x = m.add_var("x", **xargs)
     y = m.add_var("y", **yargs)
     add_line(m, p1, p2, x, y, under)
+    m.solver.set_verbose(0)
     m.optimize()
     assert m.status == OptimizationStatus.OPTIMAL
     assert (x.x, y.x) == expect
@@ -31,6 +48,7 @@ def check_add_lines_conv(xargs, yargs, curve, upward, expect):
     x = m.add_var("x", **xargs)
     y = m.add_var("y", **yargs)
     add_lines_conv(m, curve, x, y, upward)
+    m.solver.set_verbose(0)
     m.optimize()
     assert m.status == OptimizationStatus.OPTIMAL
     assert (x.x, y.x) == expect
@@ -55,6 +73,7 @@ def check_add_lines(xargs, yargs, curve, expect):
     x = m.add_var("x", **xargs)
     y = m.add_var("y", **yargs)
     add_lines(m, curve, x, y)
+    m.solver.set_verbose(0)
     m.optimize()
     assert m.status == OptimizationStatus.OPTIMAL
     assert (x.x, y.x) == expect
