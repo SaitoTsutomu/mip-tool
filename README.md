@@ -97,3 +97,5 @@ m.verbose = 0
 m.optimize()
 print(x.astype(float))  # [4. 6.]
 ```
+
+Expression `m += A.T.apply(lambda row: xsum(row * x)) <= b` may be faster than `m += A @ x <= b`.

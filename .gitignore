@@ -8,6 +8,7 @@ Desktop.ini
 $RECYCLE.BIN/
 *.lnk
 .envrc
+Untitled*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
