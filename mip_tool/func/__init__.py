@@ -84,9 +84,9 @@ class F:
         return m
 
 
-def addvars(m, df, name="Var", **kwargs):
+def addvars(m, df, name="Var", add=True, **kwargs):
     v = m.add_var_tensor((len(df),), name=name, **kwargs)
-    if name:
+    if add:
         df[name] = v
     return v
 
