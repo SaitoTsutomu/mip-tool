@@ -24,6 +24,7 @@ python = "^3.10"
 black = "^22.6"
 flake8 = "^4.0"
 isort = "^5.10"
+jupyterlab = "^3.4"
 mypy = "^0.971"
 pytest = "^7.1"
 

@@ -55,7 +55,7 @@ def add_lines_conv(m: Model, curve: np.ndarray, x: Var, y: Var, upward: bool = F
     :param y: Var y
     :param upward: Convex upward if True, defaults to False
     """
-    tilt = np.divide(*np.diff(curve, axis=0).T)
+    tilt = np.divide(*np.diff(curve, axis=0).T[[1, 0]])
     if upward:
         assert monotone_decreasing(tilt), "Tilt must be decr"
     else:

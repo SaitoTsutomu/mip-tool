@@ -3,8 +3,9 @@ import numpy as np
 from .. import add_lines, add_lines_conv
 
 if "_mdl_iadd" not in globals():
-    from mip import LinExpr, LinExprTensor, Model, Var
+    from mip import LinExpr, LinExprTensor, Model, Var, xsum
     from pandas import Series
+    from pandas.core.groupby import SeriesGroupBy
 
     _mdl_iadd = Model.__iadd__
     _var_eq, _var_le, _var_ge = Var.__eq__, Var.__le__, Var.__ge__
@@ -14,7 +15,7 @@ if "_mdl_iadd" not in globals():
         if isinstance(other, F):
             return other._iadd(self)
         elif isinstance(other, Series):
-            return _mdl_iadd(self, other.to_numpy().view(LinExprTensor))
+            return _mdl_iadd(self, other.values.view(LinExprTensor))
         return _mdl_iadd(self, other)
 
     def _var_eq_n(self, other):
@@ -37,22 +38,26 @@ if "_mdl_iadd" not in globals():
 
     def _ser_eq_n(self, other):
         if self.size and isinstance(self.iloc[0], LinExpr):
-            return self.to_numpy().view(LinExprTensor) == other
+            return self.values.view(LinExprTensor) == other
         return _ser_eq(self, other)
 
     def _ser_le_n(self, other):
         if self.size and isinstance(self.iloc[0], LinExpr):
-            return self.to_numpy().view(LinExprTensor) <= other
+            return self.values.view(LinExprTensor) <= other
         return _ser_le(self, other)
 
     def _ser_ge_n(self, other):
         if self.size and isinstance(self.iloc[0], LinExpr):
-            return self.to_numpy().view(LinExprTensor) >= other
+            return self.values.view(LinExprTensor) >= other
         return _ser_ge(self, other)
+
+    def _sgb_xsum(self):
+        return self.apply(xsum).values.view(LinExprTensor)
 
     Model.__iadd__ = _mdl_iadd_n
     Var.__eq__, Var.__le__, Var.__ge__ = _var_eq_n, _var_le_n, _var_ge_n
     Series.__eq__, Series.__le__, Series.__ge__ = _ser_eq_n, _ser_le_n, _ser_ge_n
+    SeriesGroupBy.xsum = _sgb_xsum
 
 
 class F:
