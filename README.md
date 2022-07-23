@@ -5,7 +5,6 @@ MIP-Tool is a package for [Python-MIP](https://www.python-mip.com/).
 ## Installation
 
 ```
-pip install pandas
 pip install mip-tool
 ```
 
@@ -40,13 +39,13 @@ show_model(m)
 Minimize
 OBJROW: - y
 Subject To
-constr(0):  - x + w_0 + w_1 + w_2 = 2
-constr(1):  - y + w_0 -3 w_1 + 3.50000 w_2 = -6
+constr(0):  x - w_0 - w_1 - w_2 = -2
+constr(1):  y - w_0 + 3 w_1 -3.50000 w_2 = 6
 constr(2):  - w_0 + z_0 <= -0
 constr(3):  w_0 <= 1
 constr(4):  - w_1 + 3 z_1 <= -0
-constr(5):  - w_1 + 3 z_0 >= -0
-constr(6):  - w_2 + 2 z_1 >= -0
+constr(5):  w_1 -3 z_0 <= -0
+constr(6):  w_2 -2 z_1 <= -0
 Bounds
  x Free
  0 <= z_0 <= 1
@@ -90,7 +89,7 @@ from mip_tool.func import addvars
 A = pd.DataFrame([[1, 2], [3, 1]])
 b = pd.Series([16, 18])
 m = Model()
-x = addvars(m, A, "")
+x = addvars(m, A, "", False)
 m.objective = maximize(xsum(x))
 m += A @ x <= b
 m.verbose = 0

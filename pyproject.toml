@@ -12,7 +12,7 @@ homepage = "https://github.com/SaitoTsutomu/mip-tool"
 license = "Apache-2.0"
 name = "mip-tool"
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 mip = "^1.14.0"
