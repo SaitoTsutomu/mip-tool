@@ -12,7 +12,7 @@ homepage = "https://github.com/SaitoTsutomu/mip-tool"
 license = "Apache-2.0"
 name = "mip-tool"
 readme = "README.md"
-version = "0.2.1"
+version = "0.2.2"
 
 [tool.poetry.dependencies]
 mip = "^1.14.0"
@@ -22,7 +22,7 @@ python = "^3.10"
 
 [tool.poetry.dev-dependencies]
 black = "^22.6"
-flake8 = "^4.0"
+flake8 = "^5.0"
 isort = "^5.10"
 jupyterlab = "^3.4"
 mypy = "^0.971"

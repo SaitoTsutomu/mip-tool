@@ -3,10 +3,10 @@ import os
 import sys
 from itertools import starmap
 from tempfile import TemporaryDirectory
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
 import numpy as np
-from mip import BINARY, LinExpr, Model, Var, xsum
+from mip import LinExpr, Model, Var, maximize, xsum
 from more_itertools import pairwise
 
 Point = Sequence[float]
@@ -74,7 +74,7 @@ def add_lines(m: Model, curve: np.ndarray, x: Var, y: Var):
     """
     n = curve.shape[0]
     w = m.add_var_tensor((n - 1,), "w")
-    z = m.add_var_tensor((n - 2,), "z", var_type=BINARY)
+    z = m.add_var_tensor((n - 2,), "z", var_type="B")
     a, b = curve.T
     m += x == a[0] + xsum(w)
     c = [(b[i + 1] - b[i]) / (a[i + 1] - a[i]) for i in range(n - 1)]
@@ -96,3 +96,68 @@ def show_model(m: Model, out=sys.stdout):
         m.write(fnam)
         with open(fnam) as fp:
             print(fp.read(), file=out)
+
+
+def random_model(
+    nv: int, nc: int, seed: int | None = None, rtco: float = 0.5, var_type: str = "B"
+):
+    """random model
+
+    :param it: number of variables
+    :param nc: number of constraints
+    :param seed: seed
+    :param rtco: rate of non zero in matrix
+    :param var_type: variable type
+    """
+    rtco = max(1e-3, rtco)
+    rnd = np.random.default_rng(seed)
+    while True:
+        m = Model()
+        x = m.add_var_tensor((nv,), "x", var_type=var_type)
+        m.objective = maximize(xsum(rnd.integers(20, 40, nv) * x))
+        rem = nc
+        while rem > 0:
+            a = rnd.integers(10, 30, nv)
+            a[rnd.random(nv) >= rtco] = 0
+            if not a.sum():
+                continue
+            m += xsum(a * x) <= rnd.integers(a.sum() // 2, a.sum() * 2 // 3)
+            rem -= 1
+        m.verbose = 0
+        m.optimize()
+        if not m.status.value:
+            return m
+
+
+def _cnst(m: Model):
+    for c in m.constrs:
+        e = [c.expr.expr.get(v, 0) for v in m.vars]
+        lb = c.rhs if c.expr.sense != "<" else -np.inf
+        ub = c.rhs if c.expr.sense != ">" else np.inf
+        yield e + [lb, ub]
+    n = len(m.vars)
+    for v, e in zip(m.vars, np.eye(n)):
+        lb = v.lb if v.lb > -1e308 else -np.inf
+        ub = v.ub if v.ub < 1e308 else np.inf
+        if not np.isinf([lb, ub]).all():
+            yield list(e) + [lb, ub]
+
+
+def scipy_milp(m: Model, options: dict[str, Any] = None):
+    """Solve by scipy.milp from mip.Model
+
+    :param m: mip.Model
+    :param options: options of scipy.milp, defaults to None
+    :return: result of scipy.milp
+    """
+    from scipy.optimize import Bounds, LinearConstraint, milp
+
+    args: dict[str, Any] = {"options": options}
+    args["c"] = np.array([v.obj for v in m.vars])
+    if m.sense != "MIN":
+        args["c"] = -args["c"]
+    args["integrality"] = [int(v.var_type != "C") for v in m.vars]
+    args["bounds"] = Bounds()
+    alu = np.array(list(_cnst(m)))
+    args["constraints"] = LinearConstraint(alu[:, :-2], alu[:, -2], alu[:, -1])
+    return milp(**args)
