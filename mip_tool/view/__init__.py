@@ -7,12 +7,12 @@ STYLE = ' style="text-align: left;" width="60"'
 def var_desc(v):
     lb, ub = v.lb, v.ub
     if v.var_type == "C":
-        s = "非負変数" if lb else "連続変数"
+        s = "連続変数" if lb else "非負変数"
     elif v.var_type == "B":
         s = "0-1変数"
         ub = float("inf")
     elif v.var_type == "I":
-        s = "非負整数変数" if lb else "整数変数"
+        s = "整数変数" if lb else "非負整数変数"
     if lb and lb > -1e308:
         s += f",≧{lb}"
     if ub < 1e308:
