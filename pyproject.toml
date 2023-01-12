@@ -12,21 +12,21 @@ homepage = "https://github.com/SaitoTsutomu/mip-tool"
 license = "Apache-2.0"
 name = "mip-tool"
 readme = "README.md"
-version = "0.2.2"
+version = "0.2.3"
 
 [tool.poetry.dependencies]
-mip = "^1.14.0"
-more-itertools = "^8.13.0"
-pandas = "^1.4.3"
+mip = "^1.14"
+more-itertools = "^9.0"
+pandas = "^1.5"
 python = "^3.10"
 
 [tool.poetry.dev-dependencies]
-black = "^22.6"
-flake8 = "^5.0"
-isort = "^5.10"
-jupyterlab = "^3.4"
-mypy = "^0.971"
-pytest = "^7.1"
+black = "^22.12"
+flake8 = "^6.0"
+isort = "^5.11"
+jupyterlab = "^3.5"
+mypy = "^0.991"
+pytest = "^7.2"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
