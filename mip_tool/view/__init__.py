@@ -41,10 +41,11 @@ def view_obj(sense, obj):
 def view_const(cnsts):
     lst = [f"<tr><td{STYLE}>制約条件</td><td>なし</td></tr>"]
     if cnsts:
-        lst[0] = f"<tr><td{STYLE}>制約条件</td></tr>\n"
+        lst = []
         for cnst in cnsts:
             s = str(cnst.expr).removeprefix("+ ")
-            lst.append(f"<tr><td>&nbsp; {s}</td></tr>\n")
+            lst.append(f"<tr><td>{s}</td></tr>\n")
+        lst[0] = f'<tr><td rowspan="{len(lst)}"{STYLE}>制約条件</td>' + lst[0][4:]
     return f'<table width="100%">\n{"".join(lst)}</table>'
 
 
