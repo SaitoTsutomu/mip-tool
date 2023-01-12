@@ -14,9 +14,9 @@ def var_desc(v):
     elif v.var_type == "I":
         s = "整数変数" if lb else "非負整数変数"
     if lb and lb > -1e308:
-        s += f",≧{lb}"
+        s += f", ≧{lb}"
     if ub < 1e308:
-        s += f",≦{ub}"
+        s += f", ≦{ub}"
     return s
 
 
@@ -44,19 +44,20 @@ def view_const(cnsts):
         lst = []
         for cnst in cnsts:
             s = str(cnst.expr).removeprefix("+ ")
+            s = s.replace("<=", "≦").replace(">=", "≧")
             lst.append(f"<tr><td>{s}</td></tr>\n")
         lst[0] = f'<tr><td rowspan="{len(lst)}"{STYLE}>制約条件</td>' + lst[0][4:]
     return f'<table width="100%">\n{"".join(lst)}</table>'
 
 
-def view_model(m, width="40%"):
+def view_model(m, width=40):
     try:
         obj = m.objective
     except ParameterNotAvailable:
         obj = None
     return HTML(
         f"""\
-<table width="{width}">
+<table width="{width}%">
   <tr><td style="text-align: center;">モデル</td></tr>
   <tr><td>{view_var(m.vars)}</td></tr>
   <tr><td>{view_obj(m.sense, obj)}</td></tr>
