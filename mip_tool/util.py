@@ -1,13 +1,12 @@
 import operator
 import os
 import sys
-from itertools import starmap
+from itertools import pairwise, starmap
 from tempfile import TemporaryDirectory
 from typing import Any, Iterable, Sequence
 
 import numpy as np
 from mip import LinExpr, Model, Var, maximize, xsum
-from more_itertools import pairwise
 
 Point = Sequence[float]
 

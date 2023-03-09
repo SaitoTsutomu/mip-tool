@@ -1,7 +1,15 @@
+import sys
+
 from IPython.display import HTML
 from mip import ParameterNotAvailable
 
 STYLE = ' style="text-align: left;" width="60"'
+VAR_WIDTH = 60
+
+
+def main():
+    src = f"{sys.argv[1]};" if len(sys.argv) > 1 else ""
+    exec(f"import mip_tool.view; from mip import *;m = Model();{src}print(view_model(m).data)")
 
 
 def var_desc(v):
@@ -25,7 +33,7 @@ def view_var(vs):
     if vs:
         lst = []
         for v in vs:
-            lst.append(f'<tr><td width="60">{v.name} :</td><td>{var_desc(v)}</td></tr>\n')
+            lst.append(f'<tr><td width="{VAR_WIDTH}">{v.name} :</td><td>{var_desc(v)}</td></tr>\n')
         lst[0] = f'<tr><td rowspan="{len(lst)}"{STYLE}>変数</td>' + lst[0][4:]
     return f'<table width="100%">\n{"".join(lst)}</table>'
 
@@ -50,17 +58,19 @@ def view_const(cnsts):
     return f'<table width="100%">\n{"".join(lst)}</table>'
 
 
-def view_model(m, width=40):
+def view_model(m, width="300"):
     try:
         obj = m.objective
     except ParameterNotAvailable:
         obj = None
     return HTML(
         f"""\
-<table width="{width}%">
+<html>
+<table width="{width}">
   <tr><td style="text-align: center;">モデル</td></tr>
   <tr><td>{view_var(m.vars)}</td></tr>
   <tr><td>{view_obj(m.sense, obj)}</td></tr>
   <tr><td>{view_const(m.constrs)}</td></tr>
-</table>"""
+</table>
+</html>"""
     )

@@ -2,13 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from mip import INF, Model, OptimizationStatus, maximize, xsum
-from mip_tool import (
-    add_line,
-    add_lines,
-    add_lines_conv,
-    monotone_decreasing,
-    monotone_increasing,
-)
+
+from mip_tool import add_line, add_lines, add_lines_conv, monotone_decreasing, monotone_increasing
 from mip_tool.func import F, addbinvars, addintvars, addvars
 
 
@@ -134,18 +129,6 @@ def test_F_4(for_F):
     check_F(m, x, y, (5, 2))
 
 
-def test_Series_1():
-    A = pd.DataFrame([[1, 2], [3, 1]])
-    b = pd.Series([16, 18])
-    m = Model()
-    var = m.add_var_tensor((2,), "var")
-    m.objective = maximize(xsum(100 * var))
-    m += A @ var <= b
-    m.verbose = 0
-    m.optimize()
-    assert all(np.equal(var.astype(float), [4, 6]))
-
-
 def test_addvars_1():
     df = pd.DataFrame([[], []])
     m = Model()
@@ -168,3 +151,15 @@ def test_addintvars_1():
     v = addintvars(m, df)
     assert [i.name for i in v] == ["Var_0", "Var_1"]
     assert [i.var_type for i in v] == ["I", "I"]
+
+
+def test_Series_1():
+    A = pd.DataFrame([[1, 2], [3, 1]])
+    b = pd.Series([16, 18])
+    m = Model()
+    var = m.add_var_tensor((2,), "var")
+    m.objective = maximize(xsum(100 * var))
+    m += A @ var <= b
+    m.verbose = 0
+    m.optimize()
+    assert all(np.equal(var.astype(float), [4, 6]))
