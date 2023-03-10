@@ -58,19 +58,18 @@ def view_const(cnsts):
     return f'<table width="100%">\n{"".join(lst)}</table>'
 
 
-def view_model(m, width="300"):
+def view_model(m, width="300", has_html=False):
     try:
         obj = m.objective
     except ParameterNotAvailable:
         obj = None
-    return HTML(
-        f"""\
-<html>
+    s = f"""\
 <table width="{width}">
   <tr><td style="text-align: center;">モデル</td></tr>
   <tr><td>{view_var(m.vars)}</td></tr>
   <tr><td>{view_obj(m.sense, obj)}</td></tr>
   <tr><td>{view_const(m.constrs)}</td></tr>
-</table>
-</html>"""
-    )
+</table>"""
+    if has_html:
+        s = f"<html>\n{s}\n</html>"
+    return HTML(s)
