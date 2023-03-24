@@ -90,6 +90,8 @@ def show_model(m: Model, out=sys.stdout):
     :param m: Model
     :param out: Output stream, defaults to sys.stdout
     """
+    if not m.vars:
+        m.add_var()  # `m.write` will error if there is no variable
     with TemporaryDirectory() as dir_:
         fnam = os.path.join(dir_, "dummy.lp")
         m.write(fnam)
