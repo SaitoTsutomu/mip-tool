@@ -32,7 +32,7 @@ def monotone_decreasing(it: Iterable):
 def add_line(m: Model, p1: Point, p2: Point, x: Var, y: Var, under: bool) -> None:
     """Add constraint which pass through p1 and p2.
 
-    :param m: Mpdel
+    :param m: Model
     :param p1: Point 1
     :param p2: Point 2
     :param x: Var x
@@ -48,7 +48,7 @@ def add_line(m: Model, p1: Point, p2: Point, x: Var, y: Var, under: bool) -> Non
 def add_lines_conv(m: Model, curve: np.ndarray, x: Var, y: Var, upward: bool = False):
     """Add convex piecewise linear constraint
 
-    :param m: Mpdel
+    :param m: Model
     :param curve: Point ndarray
     :param x: Var x
     :param y: Var y
@@ -66,7 +66,7 @@ def add_lines_conv(m: Model, curve: np.ndarray, x: Var, y: Var, upward: bool = F
 def add_lines(m: Model, curve: np.ndarray, x: Var, y: Var):
     """Add non-convex piecewise linear constraint
 
-    :param m: Mpdel
+    :param m: Model
     :param curve: Point ndarray
     :param x: Var x
     :param y: Var y
@@ -144,7 +144,7 @@ def _cnst(m: Model):
             yield list(e) + [lb, ub]
 
 
-def scipy_milp(m: Model, options: dict[str, Any] = None):
+def scipy_milp(m: Model, options: dict[str, Any] | None = None):
     """Solve by scipy.milp from mip.Model
 
     :param m: mip.Model
