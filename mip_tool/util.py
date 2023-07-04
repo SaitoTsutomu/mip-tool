@@ -113,7 +113,7 @@ def random_model(
     rtco = max(1e-3, rtco)
     rnd = np.random.default_rng(seed)
     while True:
-        m = Model()
+        m = Model(solver_name="CBC")
         x = m.add_var_tensor((nv,), "x", var_type=var_type)
         m.objective = maximize(xsum(rnd.integers(20, 40, nv) * x))
         rem = nc

@@ -19,7 +19,7 @@ import numpy as np
 from mip import INF, Model, OptimizationStatus
 from mip_tool import add_lines, show_model
 
-m = Model()
+m = Model(solver_name="CBC")
 x = m.add_var("x", lb=-INF)
 y = m.add_var("y", obj=-1)
 curve = np.array([[-2, 6], [-1, 7], [2, -2], [4, 5]])
@@ -64,7 +64,7 @@ attention: Change Model and Var when using mip_tool.func.
 ```python
 from mip_tool.func import F
 
-m = Model()
+m = Model(solver_name="CBC")
 x = m.add_var("x")
 y = m.add_var("y", obj=-1)
 m += y <= F([[0, 2], [1, 3], [2, 2]], x)
@@ -88,7 +88,7 @@ from mip_tool.func import addvars
 
 A = pd.DataFrame([[1, 2], [3, 1]])
 b = pd.Series([16, 18])
-m = Model()
+m = Model(solver_name="CBC")
 x = addvars(m, A, "", False)
 m.objective = maximize(xsum(x))
 m += A @ x <= b

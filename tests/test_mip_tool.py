@@ -19,7 +19,7 @@ def test_monotone_decreasing():
 
 def check_add_line(xargs, yargs, p1, p2, under, expect):
     """1制約条件の確認"""
-    m = Model()
+    m = Model(solver_name="CBC")
     x = m.add_var("x", **xargs)
     y = m.add_var("y", **yargs)
     add_line(m, p1, p2, x, y, under)
@@ -42,7 +42,7 @@ def test_add_line_2():
 
 def check_add_lines_conv(xargs, yargs, curve, upward, expect):
     """区分線形近似（凸）の確認"""
-    m = Model()
+    m = Model(solver_name="CBC")
     x = m.add_var("x", **xargs)
     y = m.add_var("y", **yargs)
     add_lines_conv(m, curve, x, y, upward)
@@ -67,7 +67,7 @@ def test_add_lines_conv_2():
 
 def check_add_lines(xargs, yargs, curve, expect):
     """区分線形近似の確認"""
-    m = Model()
+    m = Model(solver_name="CBC")
     x = m.add_var("x", **xargs)
     y = m.add_var("y", **yargs)
     add_lines(m, curve, x, y)
@@ -90,7 +90,7 @@ def test_add_lines_1():
 
 @pytest.fixture
 def for_F():
-    m = Model()
+    m = Model(solver_name="CBC")
     x = m.add_var("x", lb=-INF)
     y = m.add_var("y", obj=1, lb=-INF)
     return m, x, y
@@ -131,7 +131,7 @@ def test_F_4(for_F):
 
 def test_addvars_1():
     df = pd.DataFrame([[], []])
-    m = Model()
+    m = Model(solver_name="CBC")
     v = addvars(m, df)
     assert [i.name for i in v] == ["Var_0", "Var_1"]
     assert [i.var_type for i in v] == ["C", "C"]
@@ -139,7 +139,7 @@ def test_addvars_1():
 
 def test_addbinvars_1():
     df = pd.DataFrame([[], []])
-    m = Model()
+    m = Model(solver_name="CBC")
     v = addbinvars(m, df)
     assert [i.name for i in v] == ["Var_0", "Var_1"]
     assert [i.var_type for i in v] == ["B", "B"]
@@ -147,7 +147,7 @@ def test_addbinvars_1():
 
 def test_addintvars_1():
     df = pd.DataFrame([[], []])
-    m = Model()
+    m = Model(solver_name="CBC")
     v = addintvars(m, df)
     assert [i.name for i in v] == ["Var_0", "Var_1"]
     assert [i.var_type for i in v] == ["I", "I"]
@@ -156,7 +156,7 @@ def test_addintvars_1():
 def test_Series_1():
     A = pd.DataFrame([[1, 2], [3, 1]])
     b = pd.Series([16, 18])
-    m = Model()
+    m = Model(solver_name="CBC")
     var = m.add_var_tensor((2,), "var")
     m.objective = maximize(xsum(100 * var))
     m += A @ var <= b
