@@ -3,8 +3,8 @@ import sys
 from IPython.display import HTML
 from mip import ParameterNotAvailable
 
-STYLE = ' style="text-align: left;" width="60"'
-VAR_WIDTH = 60
+STYLE = ' style="text-align: left;" width="64"'
+VAR_WIDTH = 64
 
 
 def main():
@@ -60,7 +60,7 @@ def view_const(cnsts):
     return f'<table width="100%">\n{"".join(lst)}</table>'
 
 
-def view_model(m, width="300", has_html=False):
+def view_model(m, width="320", has_html=False):
     try:
         obj = m.objective
     except ParameterNotAvailable:
