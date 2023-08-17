@@ -10,7 +10,8 @@ VAR_WIDTH = 64
 def main():
     src = f"{sys.argv[1]};" if len(sys.argv) > 1 else ""
     exec(
-        f"import mip_tool.view; from mip import *;m = Model(solver_name='CBC');{src}print(view_model(m).data)"
+        "import mip_tool.view; from mip import *;"
+        f"m = Model(solver_name='CBC');{src}print(view_model(m).data)"
     )
 
 
@@ -48,12 +49,12 @@ def view_obj(sense, obj):
     return f'<table width="100%"><tr><td{STYLE}>目的関数</td><td>{s}</td></tr></table>'
 
 
-def view_const(cnsts):
+def view_const(constrs):
     lst = [f"<tr><td{STYLE}>制約条件</td><td>なし</td></tr>"]
-    if cnsts:
+    if constrs:
         lst = []
-        for cnst in cnsts:
-            s = str(cnst.expr).removeprefix("+ ")
+        for constr in constrs:
+            s = str(constr.expr).removeprefix("+ ")
             s = s.replace("<=", "≦").replace(">=", "≧")
             lst.append(f"<tr><td>{s}</td></tr>\n")
         lst[0] = f'<tr><td rowspan="{len(lst)}"{STYLE}>制約条件</td>' + lst[0][4:]

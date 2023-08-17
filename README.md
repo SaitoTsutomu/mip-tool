@@ -79,7 +79,7 @@ print(x.x, y.x)  # 1.0 3.0
 
 ## pandas.DataFrame example
 
-attention: Change Seies when using mip_tool.func.
+attention: Change Series when using mip_tool.func.
 
 ```python
 import pandas as pd

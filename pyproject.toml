@@ -24,11 +24,11 @@ pandas = ">=1.5.3"
 python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.3"
-flake8 = "^6.0"
+black = "^23.7"
+flake8 = "^6.1"
 isort = "^5.12"
 jupyterlab = "^4.0"
-mypy = "^1.4"
+mypy = "^1.5"
 pytest = "^7.4"
 
 [build-system]
