@@ -9,10 +9,7 @@ VAR_WIDTH = 64
 
 def main():
     src = f"{sys.argv[1]};" if len(sys.argv) > 1 else ""
-    exec(
-        "import mip_tool.view; from mip import *;"
-        f"m = Model(solver_name='CBC');{src}print(view_model(m).data)"
-    )
+    exec(f"import mip_tool.view;from mip import *;m = Model(solver_name='CBC');{src}print(view_model(m).data)")
 
 
 def var_desc(v):

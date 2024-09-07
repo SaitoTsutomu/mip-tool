@@ -1,9 +1,10 @@
 import operator
 import os
 import sys
+from collections.abc import Iterable, Sequence
 from itertools import pairwise, starmap
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import numpy as np
 from mip import LinExpr, Model, Var, maximize, xsum
@@ -93,15 +94,13 @@ def show_model(m: Model, out=sys.stdout):
     if not m.vars:
         m.add_var()  # `m.write` will error if there is no variable
     with TemporaryDirectory() as dir_:
-        fnam = os.path.join(dir_, "dummy.lp")
-        m.write(fnam)
-        with open(fnam) as fp:
+        file_name = os.path.join(dir_, "dummy.lp")
+        m.write(file_name)
+        with open(file_name) as fp:
             print(fp.read(), file=out)
 
 
-def random_model(
-    nv: int, nc: int, seed: int | None = None, rtco: float = 0.5, var_type: str = "B"
-):
+def random_model(nv: int, nc: int, seed: int | None = None, rtco: float = 0.5, var_type: str = "B"):
     """random model
 
     :param it: number of variables
@@ -135,13 +134,13 @@ def _cnst(m: Model):
         e = [c.expr.expr.get(v, 0) for v in m.vars]
         lb = c.rhs if c.expr.sense != "<" else -np.inf
         ub = c.rhs if c.expr.sense != ">" else np.inf
-        yield e + [lb, ub]
+        yield [*e, lb, ub]
     n = len(m.vars)
-    for v, e in zip(m.vars, np.eye(n)):
+    for v, e in zip(m.vars, np.eye(n), strict=False):
         lb = v.lb if v.lb > -1e308 else -np.inf
         ub = v.ub if v.ub < 1e308 else np.inf
         if not np.isinf([lb, ub]).all():
-            yield list(e) + [lb, ub]
+            yield [*list(e), lb, ub]
 
 
 def scipy_milp(m: Model, options: dict[str, Any] | None = None):

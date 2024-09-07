@@ -10,6 +10,58 @@ pip install mip-tool
 
 ## Example
 
+## Show/View model
+
+```python
+from mip import Model, maximize
+from mip_tool import show_model
+
+m = Model()
+x = m.add_var("x")
+y = m.add_var("y")
+m.objective = maximize(x + y)
+m += x + 2 * y <= 16
+m += 3 * x + y <= 18
+show_model(m)
+```
+
+*Output*
+
+```
+\Problem name: 
+
+Minimize
+OBJROW: - x - y
+Subject To
+constr(0):  x + 2 y <= 16
+constr(1):  3 x + y <= 18
+Bounds
+End
+```
+
+In Jupyter
+
+```python
+from mip_tool.view import view_model
+
+view_model(m)
+```
+
+*Output*
+
+<table width="320">
+  <tr><td style="text-align: center;">モデル</td></tr>
+  <tr><td><table width="100%">
+<tr><td rowspan="2" style="text-align: left;" width="64">変数</td><td width="64">x :</td><td>非負変数</td></tr>
+<tr><td width="64">y :</td><td>非負変数</td></tr>
+</table></td></tr>
+  <tr><td><table width="100%"><tr><td style="text-align: left;" width="64">目的関数</td><td>x + y  → 最大化</td></tr></table></td></tr>
+  <tr><td><table width="100%">
+<tr><td rowspan="2" style="text-align: left;" width="64">制約条件</td><td>x + 2.0y  ≦ 16.0</td></tr>
+<tr><td>3.0x + y  ≦ 18.0</td></tr>
+</table></td></tr>
+</table>
+
 ### Non-convex piecewise linear constraint
 
 Maximize y which is on points of (-2, 6), (-1, 7), (2, -2), (4, 5).
@@ -89,7 +141,7 @@ from mip_tool.func import addvars
 A = pd.DataFrame([[1, 2], [3, 1]])
 b = pd.Series([16, 18])
 m = Model(solver_name="CBC")
-x = addvars(m, A, "", False)
+x = addvars(m, A, "X", False)
 m.objective = maximize(xsum(x))
 m += A @ x <= b
 m.verbose = 0

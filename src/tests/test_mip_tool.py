@@ -41,7 +41,7 @@ def test_add_line_2():
 
 
 def check_add_lines_conv(xargs, yargs, curve, upward, expect):
-    """区分線形近似（凸）の確認"""
+    """区分線形近似(凸)の確認"""
     m = Model(solver_name="CBC")
     x = m.add_var("x", **xargs)
     y = m.add_var("y", **yargs)
@@ -54,13 +54,13 @@ def check_add_lines_conv(xargs, yargs, curve, upward, expect):
 
 
 def test_add_lines_conv_1():
-    """区分線形近似（凸）の最小化"""
+    """区分線形近似(凸)の最小化"""
     curve = np.array([[-3, -5], [-2, -7], [-1, -6]])
     check_add_lines_conv(dict(lb=-INF), dict(obj=1, lb=-INF), curve, False, (-2, -7))
 
 
 def test_add_lines_conv_2():
-    """区分線形近似（凸）の最大化"""
+    """区分線形近似(凸)の最大化"""
     curve = np.array([[2, 3], [3, 5], [4, 4]])
     check_add_lines_conv(dict(), dict(obj=-1, lb=-INF), curve, True, (3, 5))
 
@@ -89,44 +89,44 @@ def test_add_lines_1():
 
 
 @pytest.fixture
-def for_F():
+def for_f():
     m = Model(solver_name="CBC")
     x = m.add_var("x", lb=-INF)
     y = m.add_var("y", obj=1, lb=-INF)
     return m, x, y
 
 
-def check_F(m, x, y, expect):
+def check_f(m, x, y, expect):
     m.verbose = 0
     m.optimize()
     assert m.status == OptimizationStatus.OPTIMAL
     assert (x.x, y.x) == expect
 
 
-def test_F_1(for_F):
-    m, x, y = for_F
+def test_f_1(for_f):
+    m, x, y = for_f
     y.obj = -1
     m += y <= F([[0, 1], [3, 2], [7, 0]], x)
-    check_F(m, x, y, (3, 2))
+    check_f(m, x, y, (3, 2))
 
 
-def test_F_2(for_F):
-    m, x, y = for_F
+def test_f_2(for_f):
+    m, x, y = for_f
     m += y >= F([[-4, 5], [-2, -1], [-1, 3]], x)
-    check_F(m, x, y, (-2, -1))
+    check_f(m, x, y, (-2, -1))
 
 
-def test_F_3(for_F):
-    m, x, y = for_F
+def test_f_3(for_f):
+    m, x, y = for_f
     y.obj = -1
     m += y == F([[1, 3], [5, 2], [9, 8], [11, 6]], x)
-    check_F(m, x, y, (9, 8))
+    check_f(m, x, y, (9, 8))
 
 
-def test_F_4(for_F):
-    m, x, y = for_F
+def test_f_4(for_f):
+    m, x, y = for_f
     m += y == F([[1, 3], [5, 2], [9, 8], [11, 6]], x)
-    check_F(m, x, y, (5, 2))
+    check_f(m, x, y, (5, 2))
 
 
 def test_addvars_1():
@@ -153,13 +153,13 @@ def test_addintvars_1():
     assert [i.var_type for i in v] == ["I", "I"]
 
 
-def test_Series_1():
-    A = pd.DataFrame([[1, 2], [3, 1]])
+def test_series_1():
+    a = pd.DataFrame([[1, 2], [3, 1]])
     b = pd.Series([16, 18])
     m = Model(solver_name="CBC")
     var = m.add_var_tensor((2,), "var")
     m.objective = maximize(xsum(100 * var))
-    m += A @ var <= b
+    m += a @ var <= b
     m.verbose = 0
     m.optimize()
     assert all(np.equal(var.astype(float), [4, 6]))
