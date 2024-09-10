@@ -1,8 +1,11 @@
 import operator
 import os
+import re
 import sys
+import tomllib
 from collections.abc import Iterable, Sequence
 from itertools import pairwise, starmap
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
@@ -85,6 +88,14 @@ def add_lines(m: Model, curve: np.ndarray, x: Var, y: Var):
         m += w[i] <= (a[i + 1] - a[i]) * (1 if i == 0 else z[i - 1])
 
 
+def model2str(m: Model):
+    with TemporaryDirectory() as dir_:
+        file_name = os.path.join(dir_, "dummy.lp")
+        m.write(file_name)
+        with open(file_name) as fp:
+            return fp.read()
+
+
 def show_model(m: Model, out=sys.stdout):
     """Show LP format
 
@@ -93,11 +104,7 @@ def show_model(m: Model, out=sys.stdout):
     """
     if not m.vars:
         m.add_var()  # `m.write` will error if there is no variable
-    with TemporaryDirectory() as dir_:
-        file_name = os.path.join(dir_, "dummy.lp")
-        m.write(file_name)
-        with open(file_name) as fp:
-            print(fp.read(), file=out)
+    print(model2str(m), file=out)
 
 
 def random_model(nv: int, nc: int, seed: int | None = None, rtco: float = 0.5, var_type: str = "B"):
@@ -161,3 +168,41 @@ def scipy_milp(m: Model, options: dict[str, Any] | None = None):
     alu = np.array(list(_cnst(m)))
     args["constraints"] = LinearConstraint(alu[:, :-2], alu[:, -2], alu[:, -1])
     return milp(**args)
+
+
+def model2toml(m: Model) -> str:
+    cons = {re.sub(r"[ -/:-@\[-`{-~]", "_", co.name): co for co in m.constrs}
+    assert len(set(va.name for va in m.vars)) == len(m.vars), "Variable names must be unique"
+    assert len(cons) == len(m.constrs), "Constraint names must be unique"
+    lst = []
+    lst.append(f"sense = {m.sense!r}")
+    lst.append("[vars]")
+    for va in m.vars:
+        lb = "-inf" if va.lb <= -sys.float_info.max else f"{va.lb:g}"
+        ub = "inf" if va.ub >= sys.float_info.max else f"{va.ub:g}"
+        lst.append(f"{va.name} = [{lb}, {ub}, {va.obj:g}, {va.var_type!r}]")
+    lst.append("[constrs]")
+    for name, co in cons.items():
+        variables = [v.name for v in co.expr.expr]
+        coeffs = "[" + ", ".join(f"{i:g}" for i in co.expr.expr.values()) + "]"
+        lst.append(f"{name} = [{variables}, {coeffs}, {co.expr.const:g}, {co.expr.sense!r}]")
+    return "\n".join(lst)
+
+
+def write_toml(m: Model, filename: str, encoding: str | None = None) -> None:
+    Path(filename).write_text(model2toml(m), encoding)
+
+
+def toml2model(data: dict[str, Any]) -> Model:
+    m = Model(sense=data["sense"])
+    for name, args in data["vars"].items():
+        m.add_var(name, *args)
+    for name, (variables, coeffs, const, sense) in data["constrs"].items():
+        variables = [m.vars[s] for s in variables]
+        m.add_constr(LinExpr(variables, coeffs, const, sense), name)
+    return m
+
+
+def read_toml(filename: str, encoding: str | None = None) -> Model:
+    data = tomllib.loads(Path(filename).read_text(encoding))
+    return toml2model(data)

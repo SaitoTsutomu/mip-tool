@@ -1,9 +1,21 @@
+import tomllib
+from textwrap import dedent
+
 import numpy as np
 import pandas as pd
 import pytest
 from mip import INF, Model, OptimizationStatus, maximize, xsum
 
-from mip_tool import add_line, add_lines, add_lines_conv, monotone_decreasing, monotone_increasing
+from mip_tool import (
+    add_line,
+    add_lines,
+    add_lines_conv,
+    model2str,
+    model2toml,
+    monotone_decreasing,
+    monotone_increasing,
+    toml2model,
+)
 from mip_tool.func import F, addbinvars, addintvars, addvars
 
 
@@ -163,3 +175,60 @@ def test_series_1():
     m.verbose = 0
     m.optimize()
     assert all(np.equal(var.astype(float), [4, 6]))
+
+
+def test_model2toml():
+    m = Model()
+    y = m.add_var("y", lb=-INF, ub=1)
+    x = m.add_var("x", var_type="B")
+    z = m.add_var("z", lb=-1, ub=1, var_type="I")
+    m.objective = maximize(-x + 2 * y)
+    m += 3 * x - 1 * y <= z + 1
+    m += -x - y >= 2 * z - 2
+    m += y == 1 - z
+    actual = model2toml(m)
+    expected = dedent("""\
+        sense = 'MAX'
+        [vars]
+        y = [-inf, 1, 2, 'C']
+        x = [0, 1, -1, 'B']
+        z = [-1, 1, 0, 'I']
+        [constrs]
+        constr_0_ = [['y', 'x', 'z'], [-1, 3, -1], -1, '<']
+        constr_1_ = [['y', 'x', 'z'], [-1, -1, -2], 2, '>']
+        constr_2_ = [['y', 'z'], [1, 1], -1, '=']""")
+    assert actual == expected
+
+
+def test_toml2model():
+    s = dedent("""\
+        sense = 'MAX'
+        [vars]
+        y = [-inf, 1, 2, 'C']
+        x = [0, 1, -1, 'B']
+        z = [-1, 1, 0, 'I']
+        [constrs]
+        constr_0_ = [['y', 'x', 'z'], [-1, 3, -1], -1, '<']
+        constr_1_ = [['y', 'x', 'z'], [-1, -1, -2], 2, '>']
+        constr_2_ = [['y', 'z'], [1, 1], -1, '=']""")
+    data = tomllib.loads(s)
+    actual = model2str(toml2model(data))
+    expected = dedent("""\
+        \\Problem name: 
+
+        Minimize
+        OBJROW: -2 y + x
+        Subject To
+        constr_0_:  - y + 3 x - z <= 1
+        constr_1_:  - y - x -2 z >= -2
+        constr_2_:  y + z = 1
+        Bounds
+        y <= 1
+         y Free
+         0 <= x <= 1
+         -1 <= z <= 1
+        Integers
+        x z 
+        End
+        """)  # noqa: W291
+    assert actual == expected
