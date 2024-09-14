@@ -16,7 +16,7 @@ license = {text = "Apache-2.0"}
 name = "mip-tool"
 readme = "README.md"
 requires-python = ">=3.12"
-version = "0.6.0"
+version = "0.6.1"
 
 [project.urls]
 homepage = "https://github.com/SaitoTsutomu/mip-tool"
@@ -24,10 +24,20 @@ homepage = "https://github.com/SaitoTsutomu/mip-tool"
 [project.scripts]
 mip_tool = "mip_tool.view:main"
 
+[project.optional-dependencies]
+pulp = ["pulp"]
+
 [tool.uv]
 dev-dependencies = [
   "jupyterlab>=4.2.5",
+  "pulp>=2.9.0",
   "pytest>=8.3.2",
+]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+markers = [
+  "pulp: for PuLP",
 ]
 
 [tool.mypy]

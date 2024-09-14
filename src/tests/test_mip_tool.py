@@ -14,9 +14,16 @@ from mip_tool import (
     model2toml,
     monotone_decreasing,
     monotone_increasing,
+    pulp_model2toml,
     toml2model,
+    toml2pulp_model,
 )
 from mip_tool.func import F, addbinvars, addintvars, addvars
+
+try:
+    import pulp as pl
+except ModuleNotFoundError:
+    pl = None
 
 
 def test_monotone_increasing():
@@ -188,6 +195,7 @@ def test_model2toml():
     m += y == 1 - z
     actual = model2toml(m)
     expected = dedent("""\
+        name = ''
         sense = 'MAX'
         [vars]
         y = [-inf, 1, 2, 'C']
@@ -231,4 +239,64 @@ def test_toml2model():
         x z 
         End
         """)  # noqa: W291
+    assert actual == expected
+
+
+@pytest.mark.pulp
+@pytest.mark.skipif(pl is None, reason="PuLP is not imported")
+def test_pulp_model2toml():
+    m = pl.LpProblem(sense=-1)
+    y = pl.LpVariable("y", lowBound=-INF, upBound=1)
+    x = pl.LpVariable("x", cat=pl.LpBinary)
+    z = pl.LpVariable("z", lowBound=-1, upBound=1, cat=pl.LpInteger)
+    m.setObjective(-x + 2 * y)
+    m += 3 * x - 1 * y <= z + 1
+    m += -x - y >= 2 * z - 2
+    m += y == 1 - z
+    actual = pulp_model2toml(m)
+    expected = dedent("""\
+        name = 'NoName'
+        sense = 'MAX'
+        [vars]
+        x = [0, 1, -1, 'I']
+        y = [-inf, 1, 2, 'C']
+        z = [-1, 1, 0, 'I']
+        [constrs]
+        _C1 = [['x', 'y', 'z'], [3, -1, -1], -1, '<']
+        _C2 = [['x', 'y', 'z'], [-1, -1, -2], 2, '>']
+        _C3 = [['y', 'z'], [1, 1], -1, '=']""")
+    assert actual == expected
+
+
+@pytest.mark.pulp
+@pytest.mark.skipif(pl is None, reason="PuLP is not imported")
+def test_toml2pulp_model():
+    s = dedent("""\
+        sense = 'MAX'
+        [vars]
+        y = [-inf, 1, 2, 'C']
+        x = [0, 1, -1, 'B']
+        z = [-1, 1, 0, 'I']
+        [constrs]
+        constr_0_ = [['y', 'x', 'z'], [-1, 3, -1], -1, '<']
+        constr_1_ = [['y', 'x', 'z'], [-1, -1, -2], 2, '>']
+        constr_2_ = [['y', 'z'], [1, 1], -1, '=']""")
+    data = tomllib.loads(s)
+    actual = str(toml2pulp_model(data))
+    expected = dedent("""\
+        :
+        MAXIMIZE
+        -1*x + 2*y + 0
+        SUBJECT TO
+        constr_0_: 3 x - y - z <= 1
+
+        constr_1_: - x - y - 2 z >= -2
+
+        constr_2_: y + z = 1
+
+        VARIABLES
+        0 <= x <= 1 Integer
+        -inf <= y <= 1 Continuous
+        -1 <= z <= 1 Integer
+        """)
     assert actual == expected

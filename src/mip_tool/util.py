@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import tomllib
+import typing
 from collections.abc import Iterable, Sequence
 from itertools import pairwise, starmap
 from pathlib import Path
@@ -11,6 +12,13 @@ from typing import Any
 
 import numpy as np
 from mip import LinExpr, Model, Var, maximize, xsum
+from numpy import isneginf, isposinf
+
+if typing.TYPE_CHECKING:
+    try:
+        import pulp as pl
+    except ModuleNotFoundError:
+        pass
 
 Point = Sequence[float]
 
@@ -175,6 +183,7 @@ def model2toml(m: Model) -> str:
     assert len(set(va.name for va in m.vars)) == len(m.vars), "Variable names must be unique"
     assert len(cons) == len(m.constrs), "Constraint names must be unique"
     lst = []
+    lst.append(f"name = {m.name!r}")
     lst.append(f"sense = {m.sense!r}")
     lst.append("[vars]")
     for va in m.vars:
@@ -194,7 +203,7 @@ def write_toml(m: Model, filename: str, encoding: str | None = None) -> None:
 
 
 def toml2model(data: dict[str, Any]) -> Model:
-    m = Model(sense=data["sense"])
+    m = Model(name=data.get("name", ""), sense=data["sense"])
     for name, args in data["vars"].items():
         m.add_var(name, *args)
     for name, (variables, coeffs, const, sense) in data["constrs"].items():
@@ -206,3 +215,55 @@ def toml2model(data: dict[str, Any]) -> Model:
 def read_toml(filename: str, encoding: str | None = None) -> Model:
     data = tomllib.loads(Path(filename).read_text(encoding))
     return toml2model(data)
+
+
+def pulp_model2toml(m: "pl.LpProblem") -> str:
+    import pulp as pl
+
+    vars_ = m.variables()
+    cons = {re.sub(r"[ -/:-@\[-`{-~]", "_", name): co for name, co in m.constraints.items()}
+    assert len(set(va.name for va in vars_)) == len(vars_), "Variable names must be unique"
+    assert len(cons) == len(m.constraints), "Constraint names must be unique"
+    lst = []
+    lst.append(f"name = {m.name!r}")
+    lst.append(f"sense = {'MIN' if m.sense == 1 else 'MAX'!r}")
+    lst.append("[vars]")
+    for va in vars_:
+        lb = "-inf" if va.lowBound is None else f"{va.lowBound:g}"
+        ub = "inf" if va.upBound is None else f"{va.upBound:g}"
+        obj = m.objective.get(va, 0)
+        lst.append(f"{va.name} = [{lb}, {ub}, {obj:g}, {va.cat[0]!r}]")
+    lst.append("[constrs]")
+    for name, co in cons.items():
+        variables_, coeffs_ = zip(*co.items(), strict=False)
+        variables = [va.name for va in co]
+        coeffs = "[" + ", ".join(f"{i:g}" for i in co.values()) + "]"
+        sense = pl.LpConstraintSenses[co.sense][0]
+        lst.append(f"{name} = [{list(variables)}, {coeffs}, {co.constant:g}, {sense!r}]")
+    return "\n".join(lst)
+
+
+def toml2pulp_model(data: dict[str, Any]) -> "pl.LpProblem":
+    import pulp as pl
+
+    cats = {"B": pl.LpBinary, "C": pl.LpContinuous, "I": pl.LpInteger}
+    senses: dict[str, int] = {"=": 0, "<": -1, ">": 1}
+    sense = 1 if data["sense"] == "MIN" else -1
+    m = pl.LpProblem(name=data.get("name", ""), sense=sense)
+    e = pl.LpAffineExpression()
+    vars_ = {}
+    for name, (lb, ub, obj, cat) in data["vars"].items():
+        if isneginf(lb):
+            lb = None
+        if isposinf(ub):
+            ub = None
+        vars_[name] = v = pl.LpVariable(name, lb, ub, cat=cats[cat])
+        if obj:
+            e.addterm(v, obj)
+    m.objective = e
+    for name, (variables, coeffs, const, sense_) in data["constrs"].items():
+        variables = [vars_[s] for s in variables]
+        e = pl.lpDot(coeffs, variables)
+        sense = senses[sense_]
+        m.addConstraint(pl.LpConstraint(e, sense=sense, rhs=-const), name)
+    return m

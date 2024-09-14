@@ -6,11 +6,13 @@ from .util import (
     model2toml,
     monotone_decreasing,
     monotone_increasing,
+    pulp_model2toml,
     random_model,
     read_toml,
     scipy_milp,
     show_model,
     toml2model,
+    toml2pulp_model,
     write_toml,
 )
 
@@ -22,10 +24,12 @@ __all__ = [
     "model2toml",
     "monotone_decreasing",
     "monotone_increasing",
+    "pulp_model2toml",
     "random_model",
     "read_toml",
     "scipy_milp",
     "show_model",
     "toml2model",
+    "toml2pulp_model",
     "write_toml",
 ]
