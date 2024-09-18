@@ -17,7 +17,7 @@ from numpy import isneginf, isposinf
 if typing.TYPE_CHECKING:
     try:
         import pulp as pl
-    except ModuleNotFoundError:
+    except ImportError:
         pass
 
 Point = Sequence[float]

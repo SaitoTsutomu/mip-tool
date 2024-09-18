@@ -22,7 +22,7 @@ from mip_tool.func import F, addbinvars, addintvars, addvars
 
 try:
     import pulp as pl
-except ModuleNotFoundError:
+except ImportError:
     pl = None
 
 
