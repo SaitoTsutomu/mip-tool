@@ -21,9 +21,9 @@ def var_desc(v):
         ub = float("inf")
     elif v.var_type == "I":
         s = "整数変数" if lb else "非負整数変数"
-    if lb and lb > -1e308:
+    if lb and lb > -1e308:  # noqa: PLR2004
         s += f", ≧{lb}"
-    if ub < 1e308:
+    if ub < 1e308:  # noqa: PLR2004
         s += f", ≦{ub}"
     return s
 
@@ -58,7 +58,7 @@ def view_const(constrs):
     return f'<table width="100%">\n{"".join(lst)}</table>'
 
 
-def view_model(m, width="320", has_html=False):
+def view_model(m, width="320", *, has_html=False):
     try:
         obj = m.objective
     except ParameterNotAvailable:

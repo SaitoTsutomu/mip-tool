@@ -1,5 +1,4 @@
 import operator
-import os
 import re
 import sys
 import tomllib
@@ -15,10 +14,10 @@ from mip import LinExpr, Model, Var, maximize, xsum
 from numpy import isneginf, isposinf
 
 if typing.TYPE_CHECKING:
-    try:
+    from contextlib import suppress
+
+    with suppress(ImportError):
         import pulp as pl
-    except ImportError:
-        pass
 
 Point = Sequence[float]
 
@@ -41,7 +40,7 @@ def monotone_decreasing(it: Iterable):
     return all(starmap(operator.ge, pairwise(it)))
 
 
-def add_line(m: Model, p1: Point, p2: Point, x: Var, y: Var, under: bool) -> None:
+def add_line(m: Model, p1: Point, p2: Point, x: Var, y: Var, *, under: bool) -> None:
     """Add constraint which pass through p1 and p2.
 
     :param m: Model
@@ -57,7 +56,7 @@ def add_line(m: Model, p1: Point, p2: Point, x: Var, y: Var, under: bool) -> Non
         m += LinExpr([x, y], [cx, dx], const, "><"[int(under)])
 
 
-def add_lines_conv(m: Model, curve: np.ndarray, x: Var, y: Var, upward: bool = False):
+def add_lines_conv(m: Model, curve: np.ndarray, x: Var, y: Var, *, upward: bool = False):
     """Add convex piecewise linear constraint
 
     :param m: Model
@@ -72,7 +71,7 @@ def add_lines_conv(m: Model, curve: np.ndarray, x: Var, y: Var, upward: bool = F
     else:
         assert monotone_increasing(tilt), "Tilt must be incr"
     for p1, p2 in pairwise(curve):
-        add_line(m, p1, p2, x, y, upward)
+        add_line(m, p1, p2, x, y, under=upward)
 
 
 def add_lines(m: Model, curve: np.ndarray, x: Var, y: Var):
@@ -98,10 +97,9 @@ def add_lines(m: Model, curve: np.ndarray, x: Var, y: Var):
 
 def model2str(m: Model):
     with TemporaryDirectory() as dir_:
-        file_name = os.path.join(dir_, "dummy.lp")
-        m.write(file_name)
-        with open(file_name) as fp:
-            return fp.read()
+        file_name = Path(dir_) / "dummy.lp"
+        m.write(str(file_name))
+        return file_name.read_text("utf-8")
 
 
 def show_model(m: Model, out=sys.stdout):
@@ -152,8 +150,8 @@ def _cnst(m: Model):
         yield [*e, lb, ub]
     n = len(m.vars)
     for v, e in zip(m.vars, np.eye(n), strict=False):
-        lb = v.lb if v.lb > -1e308 else -np.inf
-        ub = v.ub if v.ub < 1e308 else np.inf
+        lb = v.lb if v.lb > -1e308 else -np.inf  # noqa: PLR2004
+        ub = v.ub if v.ub < 1e308 else np.inf  # noqa: PLR2004
         if not np.isinf([lb, ub]).all():
             yield [*list(e), lb, ub]
 
@@ -165,7 +163,7 @@ def scipy_milp(m: Model, options: dict[str, Any] | None = None):
     :param options: options of scipy.milp, defaults to None
     :return: result of scipy.milp
     """
-    from scipy.optimize import Bounds, LinearConstraint, milp
+    from scipy.optimize import Bounds, LinearConstraint, milp  # noqa: PLC0415
 
     args: dict[str, Any] = {"options": options}
     args["c"] = np.array([v.obj for v in m.vars])
@@ -180,12 +178,9 @@ def scipy_milp(m: Model, options: dict[str, Any] | None = None):
 
 def model2toml(m: Model) -> str:
     cons = {re.sub(r"[ -/:-@\[-`{-~]", "_", co.name): co for co in m.constrs}
-    assert len(set(va.name for va in m.vars)) == len(m.vars), "Variable names must be unique"
+    assert len({va.name for va in m.vars}) == len(m.vars), "Variable names must be unique"
     assert len(cons) == len(m.constrs), "Constraint names must be unique"
-    lst = []
-    lst.append(f"name = {m.name!r}")
-    lst.append(f"sense = {m.sense!r}")
-    lst.append("[vars]")
+    lst = [f"name = {m.name!r}", f"sense = {m.sense!r}", "[vars]"]
     for va in m.vars:
         lb = "-inf" if va.lb <= -sys.float_info.max else f"{va.lb:g}"
         ub = "inf" if va.ub >= sys.float_info.max else f"{va.ub:g}"
@@ -207,8 +202,8 @@ def toml2model(data: dict[str, Any]) -> Model:
     for name, args in data["vars"].items():
         m.add_var(name, *args)
     for name, (variables, coeffs, const, sense) in data["constrs"].items():
-        variables = [m.vars[s] for s in variables]
-        m.add_constr(LinExpr(variables, coeffs, const, sense), name)
+        _variables = [m.vars[s] for s in variables]
+        m.add_constr(LinExpr(_variables, coeffs, const, sense), name)
     return m
 
 
@@ -218,16 +213,13 @@ def read_toml(filename: str, encoding: str | None = None) -> Model:
 
 
 def pulp_model2toml(m: "pl.LpProblem") -> str:
-    import pulp as pl
+    import pulp as pl  # noqa: PLC0415
 
     vars_ = m.variables()
     cons = {re.sub(r"[ -/:-@\[-`{-~]", "_", name): co for name, co in m.constraints.items()}
-    assert len(set(va.name for va in vars_)) == len(vars_), "Variable names must be unique"
+    assert len({va.name for va in vars_}) == len(vars_), "Variable names must be unique"
     assert len(cons) == len(m.constraints), "Constraint names must be unique"
-    lst = []
-    lst.append(f"name = {m.name!r}")
-    lst.append(f"sense = {'MIN' if m.sense == 1 else 'MAX'!r}")
-    lst.append("[vars]")
+    lst = [f"name = {m.name!r}", f"sense = {'MIN' if m.sense == 1 else 'MAX'!r}", "[vars]"]
     for va in vars_:
         lb = "-inf" if va.lowBound is None else f"{va.lowBound:g}"
         ub = "inf" if va.upBound is None else f"{va.upBound:g}"
@@ -235,7 +227,6 @@ def pulp_model2toml(m: "pl.LpProblem") -> str:
         lst.append(f"{va.name} = [{lb}, {ub}, {obj:g}, {va.cat[0]!r}]")
     lst.append("[constrs]")
     for name, co in cons.items():
-        variables_, coeffs_ = zip(*co.items(), strict=False)
         variables = [va.name for va in co]
         coeffs = "[" + ", ".join(f"{i:g}" for i in co.values()) + "]"
         sense = pl.LpConstraintSenses[co.sense][0]
@@ -244,7 +235,7 @@ def pulp_model2toml(m: "pl.LpProblem") -> str:
 
 
 def toml2pulp_model(data: dict[str, Any]) -> "pl.LpProblem":
-    import pulp as pl
+    import pulp as pl  # noqa: PLC0415
 
     cats = {"B": pl.LpBinary, "C": pl.LpContinuous, "I": pl.LpInteger}
     senses: dict[str, int] = {"=": 0, "<": -1, ">": 1}
@@ -253,17 +244,15 @@ def toml2pulp_model(data: dict[str, Any]) -> "pl.LpProblem":
     e = pl.LpAffineExpression()
     vars_ = {}
     for name, (lb, ub, obj, cat) in data["vars"].items():
-        if isneginf(lb):
-            lb = None
-        if isposinf(ub):
-            ub = None
-        vars_[name] = v = pl.LpVariable(name, lb, ub, cat=cats[cat])
+        _lb = None if isneginf(lb) else lb
+        _ub = None if isposinf(ub) else ub
+        vars_[name] = v = pl.LpVariable(name, _lb, _ub, cat=cats[cat])
         if obj:
             e.addterm(v, obj)
     m.objective = e
     for name, (variables, coeffs, const, sense_) in data["constrs"].items():
-        variables = [vars_[s] for s in variables]
-        e = pl.lpDot(coeffs, variables)
+        _variables = [vars_[s] for s in variables]
+        e = pl.lpDot(coeffs, _variables)
         sense = senses[sense_]
         m.addConstraint(pl.LpConstraint(e, sense=sense, rhs=-const), name)
     return m

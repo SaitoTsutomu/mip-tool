@@ -36,12 +36,12 @@ def test_monotone_decreasing():
     assert monotone_decreasing([3, 3, 2, -1, -1])
 
 
-def check_add_line(xargs, yargs, p1, p2, under, expect):
+def check_add_line(x_args, y_args, p1, p2, under, expect):
     """1制約条件の確認"""
     m = Model(solver_name="CBC")
-    x = m.add_var("x", **xargs)
-    y = m.add_var("y", **yargs)
-    add_line(m, p1, p2, x, y, under)
+    x = m.add_var("x", **x_args)
+    y = m.add_var("y", **y_args)
+    add_line(m, p1, p2, x, y, under=under)
     m.verbose = 0
     m.optimize()
     assert m.status == OptimizationStatus.OPTIMAL
@@ -51,20 +51,20 @@ def check_add_line(xargs, yargs, p1, p2, under, expect):
 
 def test_add_line_1():
     """1制約条件の最小化"""
-    check_add_line(dict(lb=-INF, ub=-1), dict(obj=1), [1, 2], [3, 1], False, (-1, 3))
+    check_add_line({"lb": -INF, "ub": -1}, {"obj": 1}, [1, 2], [3, 1], under=False, expect=(-1, 3))
 
 
 def test_add_line_2():
     """1制約条件の最大化"""
-    check_add_line(dict(lb=-2), dict(obj=-1), [1, 2], [3, 1], True, (-2, 3.5))
+    check_add_line({"lb": -2}, {"obj": -1}, [1, 2], [3, 1], under=True, expect=(-2, 3.5))
 
 
-def check_add_lines_conv(xargs, yargs, curve, upward, expect):
+def check_add_lines_conv(x_args, y_args, curve, upward, expect):
     """区分線形近似(凸)の確認"""
     m = Model(solver_name="CBC")
-    x = m.add_var("x", **xargs)
-    y = m.add_var("y", **yargs)
-    add_lines_conv(m, curve, x, y, upward)
+    x = m.add_var("x", **x_args)
+    y = m.add_var("y", **y_args)
+    add_lines_conv(m, curve, x, y, upward=upward)
     m.verbose = 0
     m.optimize()
     assert m.status == OptimizationStatus.OPTIMAL
@@ -75,13 +75,13 @@ def check_add_lines_conv(xargs, yargs, curve, upward, expect):
 def test_add_lines_conv_1():
     """区分線形近似(凸)の最小化"""
     curve = np.array([[-3, -5], [-2, -7], [-1, -6]])
-    check_add_lines_conv(dict(lb=-INF), dict(obj=1, lb=-INF), curve, False, (-2, -7))
+    check_add_lines_conv({"lb": -INF}, {"obj": 1, "lb": -INF}, curve, upward=False, expect=(-2, -7))
 
 
 def test_add_lines_conv_2():
     """区分線形近似(凸)の最大化"""
     curve = np.array([[2, 3], [3, 5], [4, 4]])
-    check_add_lines_conv(dict(), dict(obj=-1, lb=-INF), curve, True, (3, 5))
+    check_add_lines_conv({}, {"obj": -1, "lb": -INF}, curve, upward=True, expect=(3, 5))
 
 
 def check_add_lines(xargs, yargs, curve, expect):
@@ -100,11 +100,11 @@ def check_add_lines(xargs, yargs, curve, expect):
 def test_add_lines_1():
     """区分線形近似の色々な確認"""
     curve = np.array([[-2, 6], [-1, 7], [2, -2], [4, 5]])
-    check_add_lines(dict(lb=-2, ub=-2), dict(), curve, (-2, 6))
-    check_add_lines(dict(lb=-INF), dict(obj=-1), curve, (-1, 7))
-    check_add_lines(dict(lb=1, ub=1), dict(), curve, (1, 1))
-    check_add_lines(dict(), dict(obj=1, lb=-INF), curve, (2, -2))
-    check_add_lines(dict(lb=4, ub=4), dict(), curve, (4, 5))
+    check_add_lines({"lb": -2, "ub": -2}, {}, curve, (-2, 6))
+    check_add_lines({"lb": -INF}, {"obj": -1}, curve, (-1, 7))
+    check_add_lines({"lb": 1, "ub": 1}, {}, curve, (1, 1))
+    check_add_lines({}, {"obj": 1, "lb": -INF}, curve, (2, -2))
+    check_add_lines({"lb": 4, "ub": 4}, {}, curve, (4, 5))
 
 
 @pytest.fixture
