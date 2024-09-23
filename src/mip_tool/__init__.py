@@ -1,3 +1,5 @@
+from importlib.metadata import metadata
+
 from .util import (
     add_line,
     add_lines,
@@ -33,3 +35,6 @@ __all__ = [
     "toml2pulp_model",
     "write_toml",
 ]
+_package_metadata = metadata(__package__)
+__version__ = _package_metadata["Version"]
+__author__ = _package_metadata.get("Author-email", "")
