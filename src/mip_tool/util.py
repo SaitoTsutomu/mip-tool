@@ -67,9 +67,12 @@ def add_lines_conv(m: Model, curve: np.ndarray, x: Var, y: Var, *, upward: bool 
     """
     tilt = np.divide(*np.diff(curve, axis=0).T[[1, 0]])
     if upward:
-        assert monotone_decreasing(tilt), "Tilt must be decr"
-    else:
-        assert monotone_increasing(tilt), "Tilt must be incr"
+        if not monotone_decreasing(tilt):
+            msg = "Tilt must be decr"
+            raise ValueError(msg)
+    elif not monotone_increasing(tilt):
+        msg = "Tilt must be incr"
+        raise ValueError(msg)
     for p1, p2 in pairwise(curve):
         add_line(m, p1, p2, x, y, under=upward)
 
@@ -178,8 +181,12 @@ def scipy_milp(m: Model, options: dict[str, Any] | None = None):
 
 def model2toml(m: Model) -> str:
     cons = {re.sub(r"[ -/:-@\[-`{-~]", "_", co.name): co for co in m.constrs}
-    assert len({va.name for va in m.vars}) == len(m.vars), "Variable names must be unique"
-    assert len(cons) == len(m.constrs), "Constraint names must be unique"
+    if len({va.name for va in m.vars}) != len(m.vars):
+        msg = "Variable names must be unique"
+        raise ValueError(msg)
+    if len(cons) != len(m.constrs):
+        msg = "Constraint names must be unique"
+        raise ValueError(msg)
     lst = [f"name = {m.name!r}", f"sense = {m.sense!r}", "[vars]"]
     for va in m.vars:
         lb = "-inf" if va.lb <= -sys.float_info.max else f"{va.lb:g}"
@@ -217,8 +224,12 @@ def pulp_model2toml(m: "pl.LpProblem") -> str:
 
     vars_ = m.variables()
     cons = {re.sub(r"[ -/:-@\[-`{-~]", "_", name): co for name, co in m.constraints.items()}
-    assert len({va.name for va in vars_}) == len(vars_), "Variable names must be unique"
-    assert len(cons) == len(m.constraints), "Constraint names must be unique"
+    if len({va.name for va in vars_}) != len(vars_):
+        msg = "Variable names must be unique"
+        raise ValueError(msg)
+    if len(cons) != len(m.constraints):
+        msg = "Constraint names must be unique"
+        raise ValueError(msg)
     lst = [f"name = {m.name!r}", f"sense = {'MIN' if m.sense == 1 else 'MAX'!r}", "[vars]"]
     for va in vars_:
         lb = "-inf" if va.lowBound is None else f"{va.lowBound:g}"

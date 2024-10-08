@@ -1,6 +1,6 @@
 import numpy as np
 
-from .. import add_lines, add_lines_conv
+from mip_tool import add_lines, add_lines_conv
 
 if "_mdl_iadd" not in globals():
     from mip import LinExpr, LinExprTensor, Model, Var, xsum
@@ -81,7 +81,8 @@ class F:  # noqa: PLW1641
         return self
 
     def _iadd(self, m):
-        assert isinstance(self.y, Var)
+        if not isinstance(self.y, Var):
+            raise TypeError
         if self.sense == "=":
             add_lines(m, self.curve, self.x, self.y)
         else:
